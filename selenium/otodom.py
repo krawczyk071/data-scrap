@@ -5,8 +5,13 @@ from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By 
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.action_chains import ActionChains
 from bs4 import BeautifulSoup
 import os
+import csv
+import time
+
+
 
 def init():
     # Instantiate options
@@ -65,24 +70,34 @@ def top(page=1):
         print('not loaded')
         return
     
+    fieldnames = ['link', 'name', 'where', 'price', 'perm', 'rooms', 'sqm', 'who']
+    timestr = time.strftime("%Y%m%d-%H%M%S")
+    filename = './output'+timestr+'.csv'
+    with open(filename, 'w', encoding='UTF8', newline='') as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames,delimiter =';')
+        writer.writeheader()
+        
     organic = driver.find_element(By.CSS_SELECTOR,'[data-cy="search.listing.organic"]')
     itms = organic.find_elements(By.CSS_SELECTOR,'[data-cy="listing-item"]')
     for item in itms:
 
+        estate_data = dict()
         link = item.find_element(By.CSS_SELECTOR,'[data-cy="listing-item-link"]')
         article = item.find_element(By.CSS_SELECTOR,'article')
-        link = link.get_attribute('href')
-        name = article.find_element(By.CSS_SELECTOR,'div h3').text
-        where = article.find_element(By.CSS_SELECTOR,'div + p').text
+        estate_data['link'] = link.get_attribute('href')
+        estate_data['name'] = article.find_element(By.CSS_SELECTOR,'div h3').text
+        estate_data['where'] = article.find_element(By.CSS_SELECTOR,'div + p').text
         data = article.find_element(By.CSS_SELECTOR,'div:nth-of-type(2)')
-        price = data.find_element(By.CSS_SELECTOR,'span:nth-of-type(1)').text
-        perm = data.find_element(By.CSS_SELECTOR,'span:nth-of-type(2)').text
-        rooms = data.find_element(By.CSS_SELECTOR,'span:nth-of-type(3)').text
-        sqm = data.find_element(By.CSS_SELECTOR,'span:nth-of-type(4)').text
-        who = article.find_element(By.CSS_SELECTOR,'div:nth-of-type(3)').text
+        estate_data['price'] = data.find_element(By.CSS_SELECTOR,'span:nth-of-type(1)').text
+        estate_data['perm'] = data.find_element(By.CSS_SELECTOR,'span:nth-of-type(2)').text
+        estate_data['rooms'] = data.find_element(By.CSS_SELECTOR,'span:nth-of-type(3)').text
+        estate_data['sqm'] = data.find_element(By.CSS_SELECTOR,'span:nth-of-type(4)').text
+        estate_data['who'] = article.find_element(By.CSS_SELECTOR,'div:nth-of-type(3)').text
         
-        print(who)                                                                                  
-
+        with open(filename, 'a', encoding='UTF8', newline='') as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writerow(estate_data)
+        # print(estate_data)                                                                                  
 
 def details(url='https://www.otodom.pl/pl/oferta/2-pokoje-44m-umeblowane-klima-do-wprowadzenia-ID4ka0Q'):
     driver.get(url)
@@ -102,7 +117,7 @@ def details(url='https://www.otodom.pl/pl/oferta/2-pokoje-44m-umeblowane-klima-d
         # print(ii1,ii2)
     #opt
     more = driver.find_element(By.CSS_SELECTOR,'[data-testid="content-container"]+button')
-    webdriver.ActionChains(driver).move_to_element(more).click(more).perform()
+    ActionChains(driver).move_to_element(more).click(more).perform()
     full = driver.find_element(By.CSS_SELECTOR,'[data-cy="adPageAdDescription"]').text
 
     info2 = driver.find_elements(By.CSS_SELECTOR,'[data-testid="ad.additional-information.table"]>div>div')
@@ -124,3 +139,24 @@ init()
 # first()
 top()
 # details()
+
+# # csv header
+# fieldnames = ['name', 'area', 'country_code2', 'country_code3']
+
+# # csv data
+# rows = [
+#     {'name': 'Albania',
+#     'area': 28748,
+#     'country_code2': 'AL',
+#     'country_code3': 'ALB'},
+#     {'name': 'Algeria',
+#     'area': 2381741,
+#     'country_code2': 'DZ',
+#     'country_code3': 'DZA'}
+# ]
+
+# def save_csv(filename,fieldnames)
+#     with open(filename, 'w', encoding='UTF8', newline='') as f:
+#         writer = csv.DictWriter(f, fieldnames=fieldnames)
+#         writer.writeheader()
+#         writer.writerows(rows)
