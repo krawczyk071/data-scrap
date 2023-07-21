@@ -56,6 +56,8 @@ def is_loaded():
             EC.presence_of_element_located(
                 (By.CSS_SELECTOR, '[data-cy="pagination"]'))
         )
+
+        ActionChains(driver).move_to_element(element).perform()
         return True
     except:
         return False
@@ -86,6 +88,17 @@ def save_csv(filename, fieldnames, row):
         writer.writerow(row)
 
 
+def export_csv(name, data):
+
+    timestr = time.strftime("%Y%m%d-%H%M%S")
+    filename = './'+name+timestr+'.csv'
+
+    with open(filename, 'w', encoding='UTF8', newline='') as f:
+        writer = csv.writer(f, delimiter=';')
+        writer.writerows(data)
+    return filename
+
+
 def top(filename, fieldnames, page=1):
     driver.get(make_url('lodzkie', 'lodz', page))
     cookie()
@@ -94,37 +107,68 @@ def top(filename, fieldnames, page=1):
         print('not loaded')
         return
 
-    organic = driver.find_element(
-        By.CSS_SELECTOR, '[data-cy="search.listing.organic"]')
-    itms = organic.find_elements(By.CSS_SELECTOR, '[data-cy="listing-item"]')
+    # organic = driver.find_element(By.CSS_SELECTOR, '[data-cy="search.listing.organic"]')
+    # try bs4
+    page_source = driver.page_source
+
+    soup = BeautifulSoup(page_source, "html.parser")
+    organic = soup.select('[data-cy="search.listing.organic"]')[0]
+
     date = time.strftime("%Y%m%d")
+
+    # itms = organic.find_elements(By.CSS_SELECTOR, '[data-cy="listing-item"]')
+    # for item in itms:
+
+    #     estate_data = dict()
+    #     estate_data['date'] = date
+    #     link = item.find_element(
+    #         By.CSS_SELECTOR, '[data-cy="listing-item-link"]')
+    #     article = item.find_element(By.CSS_SELECTOR, 'article')
+    #     estate_data['link'] = link.get_attribute('href')
+    #     estate_data['name'] = article.find_element(
+    #         By.CSS_SELECTOR, 'div h3').text
+    #     estate_data['where'] = article.find_element(
+    #         By.CSS_SELECTOR, 'div + p').text
+    #     data = article.find_element(By.CSS_SELECTOR, 'div:nth-of-type(2)')
+    #     estate_data['price'] = data.find_element(
+    #         By.CSS_SELECTOR, 'span:nth-of-type(1)').text
+    #     estate_data['perm'] = data.find_element(
+    #         By.CSS_SELECTOR, 'span:nth-of-type(2)').text
+    #     estate_data['rooms'] = data.find_element(
+    #         By.CSS_SELECTOR, 'span:nth-of-type(3)').text
+    #     estate_data['sqm'] = data.find_element(
+    #         By.CSS_SELECTOR, 'span:nth-of-type(4)').text
+    #     estate_data['who'] = article.find_element(
+    #         By.CSS_SELECTOR, 'div:nth-of-type(3)').text
+
+    #     # with open(filename, 'a', encoding='UTF8', newline='') as f:
+    #     #     writer = csv.DictWriter(f, fieldnames=fieldnames)
+    #     #     writer.writerow(estate_data)
+    #     save_csv(filename, fieldnames, estate_data)
+
+    itms = organic.select('[data-cy="listing-item"]')
+    # results = soup.find(id="ResultsContainer")
+    # job_elements = results.find_all("div", class_="card-content")
+    # soup.select("head > title")
+
     for item in itms:
 
         estate_data = dict()
         estate_data['date'] = date
-        link = item.find_element(
-            By.CSS_SELECTOR, '[data-cy="listing-item-link"]')
-        article = item.find_element(By.CSS_SELECTOR, 'article')
-        estate_data['link'] = link.get_attribute('href')
-        estate_data['name'] = article.find_element(
-            By.CSS_SELECTOR, 'div h3').text
-        estate_data['where'] = article.find_element(
-            By.CSS_SELECTOR, 'div + p').text
-        data = article.find_element(By.CSS_SELECTOR, 'div:nth-of-type(2)')
-        estate_data['price'] = data.find_element(
-            By.CSS_SELECTOR, 'span:nth-of-type(1)').text
-        estate_data['perm'] = data.find_element(
-            By.CSS_SELECTOR, 'span:nth-of-type(2)').text
-        estate_data['rooms'] = data.find_element(
-            By.CSS_SELECTOR, 'span:nth-of-type(3)').text
-        estate_data['sqm'] = data.find_element(
-            By.CSS_SELECTOR, 'span:nth-of-type(4)').text
-        estate_data['who'] = article.find_element(
-            By.CSS_SELECTOR, 'div:nth-of-type(3)').text
+        link = item.select('[data-cy="listing-item-link"]')[0]
 
-        # with open(filename, 'a', encoding='UTF8', newline='') as f:
-        #     writer = csv.DictWriter(f, fieldnames=fieldnames)
-        #     writer.writerow(estate_data)
+        article = item.select('article')[0]
+        estate_data['link'] = link["href"]
+        estate_data['name'] = article.select('div h3')[0].text
+        estate_data['where'] = article.select('div + p')[0].text
+
+        data = article.select('div:nth-of-type(2)')[0]
+        estate_data['price'] = data.select('span:nth-of-type(1)')[0].text
+        estate_data['perm'] = data.select('span:nth-of-type(2)')[0].text
+        estate_data['rooms'] = data.select('span:nth-of-type(3)')[0].text
+        estate_data['sqm'] = data.select('span:nth-of-type(4)')[0].text
+        estate_data['who'] = article.select('div:nth-of-type(3)')[0].text
+
         save_csv(filename, fieldnames, estate_data)
 
 
@@ -227,12 +271,12 @@ def main1():
                   'price', 'perm', 'rooms', 'sqm', 'who']
     filename = create_csv(fieldnames)
     pages = range(1, first()+1)
-    # pages = range(1, 3)
+    pages = range(1, 3)
     for page in pages:
         top(filename, fieldnames, page)
 
 
-def main2():
+def main2(first=1):
     links = ['https://www.otodom.pl/pl/oferta/mieszkanie-22-50-m-lodz-ID4iIbp',
              'https://www.otodom.pl/pl/oferta/mieszkanie-m3-lanowa-37m2-teofilow-bezposrednio-ID4ll0F',
              'https://www.otodom.pl/pl/oferta/apartamenty-zolnierska-12-aa-2-ID4lVwG']
