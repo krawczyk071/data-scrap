@@ -1,3 +1,4 @@
+# %%
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.wait import WebDriverWait
@@ -12,8 +13,21 @@ import os
 from config import rand_proxy
 
 
-# class Driver(webdriver):
-    
+class Driver(webdriver.Chrome):
+    def __init__(self, options):
+        super().__init__(options)
+        self.is_working = False
+
+        self.options = Options()
+        self.options.add_argument("--headless=new")
+        self.options.add_argument('--proxy-server=95.216.114.142:80')
+
+
+d = Driver()
+d.get('http://onet.pl')
+# %%
+
+
 def is_connected():
     # driver.get('http://www.90minut.pl/')
     el = driver.find_element(By.TAG_NAME, 'body').text
