@@ -144,9 +144,9 @@ def top(filename, fieldnames, page=1):
 
         estate_data['date'] = date
         link = item.select('[data-cy="listing-item-link"]')[0]
+        estate_data['link'] = link["href"]
 
         article = item.select('article')[0]
-        estate_data['link'] = link["href"]
         estate_data['name'] = article.select('div h3')[0].text
         estate_data['where'] = article.select('div + p')[0].text
 

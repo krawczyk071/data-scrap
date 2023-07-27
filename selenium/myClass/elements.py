@@ -33,3 +33,6 @@ class BasePageElement():
             lambda driver: driver.find_element(*self.locator))
         element = driver.find_element(*self.locator)
         return element.get_attribute("value")
+    
+    def waitCSS(self, obj):
+        return WebDriverWait(obj.driver, 10).until(EC.presence_of_element_located(self.locator))

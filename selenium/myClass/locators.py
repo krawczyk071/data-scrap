@@ -5,6 +5,7 @@ class MainPageLocators():
     COOKIE = (By.ID, 'onetrust-accept-btn-handler')
     BOTTOM = (By.CSS_SELECTOR, '[data-cy="pagination"]')
     PAGINATIONS = (By.CSS_SELECTOR, '[data-cy^="pagination.go-to-page-"]')
+    # parse
     organic = ('[data-cy="search.listing.organic"]')
     itms = ('[data-cy="listing-item"]')
     link = ('[data-cy="listing-item-link"]')
@@ -23,10 +24,11 @@ class DetailPageLocators():
     come here"""
 
     footer = (By.CSS_SELECTOR, 'footer')
-    show = ('[data-cy="phone-number.show-full-number-button"]')
-    show_parent = show.find_element(By.XPATH, '..')
-    modal = ('[data-cy="close-modal"]')
-    more = ( By.CSS_SELECTOR, '[data-testid="content-container"]+button')
+    show = (By.CSS_SELECTOR,'[data-cy="phone-number.show-full-number-button"]')
+    show_parent = (By.XPATH, '..')
+    modal = (By.CSS_SELECTOR,'[data-cy="close-modal"]')
+    more = (By.CSS_SELECTOR, '[data-testid="content-container"]+button')
+    
     contact = ('[data-cy="contact-form"]')
     author = ('div>span')
     tel = ('[data-cy="phone-number.full-phone-number"]')
