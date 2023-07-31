@@ -130,8 +130,21 @@ class DetailPage(BasePage):
         except:
             return False
         
+    def check_active(self):
+        try:
+            self.driver.find_element(*DetailPageLocators.inactive)
+            # save empty row
+            estate_data = dict()
+            estate_data['date'] = time.strftime("%Y%m%d")
+            estate_data['link'] = self.url
+            estate_data['full'] = 'INACTIVE'
+            self.writer.save_row(estate_data)
+            return False
+        except:
+            return True
+        
     def waitCSS(self,locator, where):
-        return WebDriverWait(where, 10).until(EC.presence_of_element_located(locator))
+        return WebDriverWait(where, 3).until(EC.presence_of_element_located(locator))
 
     # show tel
     def telshow(self):
@@ -142,14 +155,15 @@ class DetailPage(BasePage):
             try:
                 show = self.driver.find_element(*DetailPageLocators.show)
                 ActionChains(self.driver).move_to_element(show).click(show).perform()
-                # show.click()
+                self.modal()
             except:
                 pass
 
     def modal(self):
     # hide modal for agencies
         try:
-            self.waitCSS(DetailPageLocators.modal, self.driver).click()
+            modal = self.waitCSS(DetailPageLocators.modal, self.driver)
+            modal.click()
             self.telshow()
         except:
             pass

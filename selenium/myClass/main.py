@@ -69,7 +69,7 @@ class Otodom():
 
     def run_main(self):
         self.fieldnames = ['date', 'link', 'name', 'where','price', 'perm', 'rooms', 'sqm', 'who']
-        self.writer = Ecsv(self.fieldnames)
+        self.writer = Ecsv(mode='w',fieldnames=self.fieldnames)
         # first
         main_page = pages.MainPage(self.driver,self.writer,1,update_last=self.update_last)
         main_page.start()
@@ -91,22 +91,26 @@ class Otodom():
 
         self.fieldnames = ['link', 'Nr oferty w biurze ', 'date', 'imgs', 'tel', 'Piętro', 'Czynsz', 'Okna', 'Typ ogłoszeniodawcy', 'Rynek', 'Ogrzewanie',
                   'Materiał budynku', 'Rodzaj zabudowy', 'author', 'Miejsce parkingowe', 'Rok budowy', 'Stan wykończenia', 'Liczba pokoi', 'Dostępne od', 'Winda', 'Wyposażenie', 'Zabezpieczenia', 'Media', 'Balkon / ogród / taras', 'Informacje dodatkowe', 'Forma własności', 'full', 'Obsługa zdalna', 'Powierzchnia', 'Nr oferty w Otodom', 'Data dodania', 'Data aktualizacji']
-        self.writer = Ecsv(self.fieldnames)
+        self.writer = Ecsv(mode='w',fieldnames=self.fieldnames)
+        self.input = Ecsv(mode='r',filename='./input2.csv')
+        links = ['https://www.otodom.pl'+ row['link'] for row in self.input.rows][:20]
     
-        links = ['https://www.otodom.pl/pl/oferta/mieszkanie-22-50-m-lodz-ID4iIbp',
-             'https://www.otodom.pl/pl/oferta/mieszkanie-m3-lanowa-37m2-teofilow-bezposrednio-ID4ll0F',
-             'https://www.otodom.pl/pl/oferta/apartamenty-zolnierska-12-aa-2-ID4lVwG']
+        # links = ['https://www.otodom.pl/pl/oferta/mieszkanie-22-50-m-lodz-ID4iIbp',
+        #      'https://www.otodom.pl/pl/oferta/mieszkanie-m3-lanowa-37m2-teofilow-bezposrednio-ID4ll0F',
+        #      'https://www.otodom.pl/pl/oferta/apartamenty-zolnierska-12-aa-2-ID4lVwG']
         
         for link in links:
             det_page = pages.DetailPage(self.driver,self.writer,link=link)
             det_page.start()
             det_page.click_cookie()
             det_page.scroll_load()
-            det_page.telshow()
-            det_page.modal()
-            det_page.details()
-            det_page.get_html()
-            det_page.parse()
+            if det_page.check_active():
+                det_page.telshow()
+                det_page.details()
+                det_page.get_html()
+                det_page.parse()
+            else:
+                print('inactive',link)
 
             self.crawl_cnt += 1
             # self.reconnect()

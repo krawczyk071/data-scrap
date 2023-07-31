@@ -24,6 +24,7 @@ class DetailPageLocators():
     come here"""
 
     footer = (By.CSS_SELECTOR, 'footer')
+    inactive = (By.CSS_SELECTOR,'[data-cy="redirectedFromInactiveAd"]')
     show = (By.CSS_SELECTOR,'[data-cy="phone-number.show-full-number-button"]')
     show_parent = (By.XPATH, '..')
     modal = (By.CSS_SELECTOR,'[data-cy="close-modal"]')
