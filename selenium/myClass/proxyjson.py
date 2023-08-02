@@ -3,13 +3,13 @@ import zipfile
 from dotenv import load_dotenv
 load_dotenv()
 
-from selenium import webdriver
+# from selenium import webdriver
 
-def create_jsons(host,port):
+def create_jsons(host,port,user,pwd):
     PROXY_HOST = host  # rotating proxy or host
     PROXY_PORT = port # port
-    PROXY_USER = os.environ.get("PROXY_USER") # username
-    PROXY_PASS = os.environ.get("PROXY_PASS") # password
+    PROXY_USER = user #os.environ.get("PROXY_USER") # username
+    PROXY_PASS = pwd #os.environ.get("PROXY_PASS") # password
 
 
     manifest_json = """
@@ -69,8 +69,8 @@ def create_jsons(host,port):
 def add_proxyjson_to_options(chrome_options,proxy_ip_port):
     path = os.path.dirname(os.path.abspath(__file__))
     pluginfile = 'proxy_auth_plugin.zip'
-    host,port=proxy_ip_port.split(':')
-    manifest_json,background_js = create_jsons(host,port)
+    host,port,user,pwd=proxy_ip_port.split(':')
+    manifest_json,background_js = create_jsons(host,port,user,pwd)
     with zipfile.ZipFile(pluginfile, 'w') as zp:
         zp.writestr("manifest.json", manifest_json)
         zp.writestr("background.js", background_js)

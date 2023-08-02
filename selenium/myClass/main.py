@@ -7,7 +7,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import WebDriverException
 import os
 import json
-
+from tqdm import tqdm
 import pages
 import proxyjson
 from exporter import Ecsv
@@ -34,6 +34,7 @@ class Otodom():
         self.is_working = False
         # self.is_reseted = False
         self.crawl_cnt = 0
+        self.crawl_limit = 20
         # check connection
         self.page_last = 1
         self.page_range = range(2, self.page_last+1)
@@ -71,13 +72,13 @@ class Otodom():
 
         
     def reconnect(self):
-        if self.crawl_cnt> 20:
+        if self.crawl_cnt > self.crawl_limit:
             self.is_working = False
 
         while (not self.is_working):
             # try to make connection
             # self.proxy = Proxy()
-            self.proxy_ip = self.proxy.rand_proxy()
+            self.proxy_ip = self.proxy.rotate_proxy()
             # self.options.add_argument(f'--proxy-server={self.proxy_ip}')
             proxyjson.add_proxyjson_to_options(self.options,self.proxy_ip)
             # self.driver = proxyjson.get_chromedriver(use_proxy=True)
@@ -98,7 +99,7 @@ class Otodom():
         self.fieldnames = ['date', 'link', 'name', 'where','price', 'perm', 'rooms', 'sqm', 'who']
         self.writer = Ecsv(mode='w',fieldnames=self.fieldnames)
         # first
-        main_page = pages.MainPage(self.driver,self.writer,1,update_last=self.update_last)
+        main_page = pages.MainPage(self.driver,self.writer,page=1,update_last=self.update_last)
         main_page.start()
         main_page.click_cookie()
         main_page.scroll_load()
@@ -107,12 +108,13 @@ class Otodom():
         main_page.parse()
         # others
         if self.page_last>1:
-            for page in self.page_range:
-                main_page = pages.MainPage(self.driver,self.writer,page)
+            for page in tqdm(self.page_range):
+                main_page = pages.MainPage(self.driver,self.writer,page=page)
                 main_page.start()
                 main_page.scroll_load()
                 main_page.get_html()
                 main_page.parse()
+                self.reconnect()
 
     def run_detail(self):
 
@@ -144,8 +146,11 @@ class Otodom():
 
 if __name__ == "__main__":
     page = Otodom()
-    page.run_detail()
+    page.run_main()
 
 # crawler
 # parser
 # dumper
+
+# mutithread
+# resume
