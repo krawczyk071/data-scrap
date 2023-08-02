@@ -29,6 +29,9 @@ class DetailPageLocators():
     show_parent = (By.XPATH, '..')
     modal = (By.CSS_SELECTOR,'[data-cy="close-modal"]')
     more = (By.CSS_SELECTOR, '[data-testid="content-container"]+button')
+    # data-cy="ad-page-sticky-header-area-contact-modal"
+    # data-cy="adPageStickyHeaderPrice"
+    # data-cy="ad-page-sticky-header-area"
     
     contact = ('[data-cy="contact-form"]')
     author = ('div>span')

@@ -4,8 +4,12 @@ from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
+from selenium.common.exceptions import WebDriverException
 import os
+import json
+
 import pages
+import proxyjson
 from exporter import Ecsv
 from utils import Proxy
 
@@ -21,18 +25,50 @@ class Otodom():
         self.options.add_experimental_option(
             'excludeSwitches', ['enable-logging'])
         # PROXY
-        # proxy = Proxy.rand_proxy()
-        # self.options.add_argument(f'--proxy-server={proxy}')
-        self.driver = webdriver.Chrome(options=self.options)
+        self.proxy = Proxy()
+        # self.proxy_ip = self.proxy.rand_proxy()
+        # self.options.add_argument(f'--proxy-server={self.proxy_ip}')
+
+        # self.driver = webdriver.Chrome(options=self.options)
         # self.driver.get("http://www.otodom.pl")
         self.is_working = False
-        self.is_reseted = False
+        # self.is_reseted = False
         self.crawl_cnt = 0
         # check connection
-        # self.is_connected()
         self.page_last = 1
         self.page_range = range(2, self.page_last+1)
+        self.reconnect()
         
+    # def is_connected(self):
+    #     try:
+    #         self.driver.get('http://www.90minut.pl/')
+    #         el = self.driver.find_element(By.TAG_NAME, 'body').text
+    #         self.is_working = not 'ERR_TIMED_OUT' in el and not 'ERR_EMPTY_RESPONSE' in el and not 'Bad Request' in el
+    #     except WebDriverException as err:
+    #         print(err.msg)
+    #         self.is_working = False
+
+    def is_connected(self):
+        self.driver.get('https://httpbin.org/ip')
+        el = self.driver.find_element(By.TAG_NAME, 'body').text
+        try:
+            res = json.loads(el)
+            if 'origin' in res:
+                self.is_working = True
+                print(res['origin'])
+        except:
+            self.is_working = False
+
+        if not self.is_working:
+            self.driver = None
+            print('Connection failed' )
+            self.proxy.blacklist(self.proxy_ip)
+            self.reconnect()
+        else:
+            print('Connection ok', self.proxy_ip)
+            # self.is_reseted = True
+            self.crawl_cnt = 0
+
         
     def reconnect(self):
         if self.crawl_cnt> 20:
@@ -40,25 +76,16 @@ class Otodom():
 
         while (not self.is_working):
             # try to make connection
-            proxy = Proxy.rand_proxy()
-            self.options.add_argument(f'--proxy-server={proxy}')
+            # self.proxy = Proxy()
+            self.proxy_ip = self.proxy.rand_proxy()
+            # self.options.add_argument(f'--proxy-server={self.proxy_ip}')
+            proxyjson.add_proxyjson_to_options(self.options,self.proxy_ip)
+            # self.driver = proxyjson.get_chromedriver(use_proxy=True)
+
             self.driver = webdriver.Chrome(options=self.options)
             # verify
             self.is_connected()
-            self.is_reseted = True
-            self.crawl_cnt = 0
 
-    def is_connected(self):
-        self.driver.get('http://www.90minut.pl/')
-        el = self.driver.find_element(By.TAG_NAME, 'body').text
-        is_bad = 'ERR_TIMED_OUT' in el
-        self.is_working = not is_bad
-        if is_bad:
-            self.driver = None
-            print('Connection failed' )
-            self.reconnect()
-        else:
-            print('Connection ok')
 
     def tearDown(self):
         self.driver.close()
@@ -113,7 +140,7 @@ class Otodom():
                 print('inactive',link)
 
             self.crawl_cnt += 1
-            # self.reconnect()
+            self.reconnect()
 
 if __name__ == "__main__":
     page = Otodom()
