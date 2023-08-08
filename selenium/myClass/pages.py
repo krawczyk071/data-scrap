@@ -53,8 +53,8 @@ class MainPage(BasePage):
     def make_url(self, woj, miasto, page=1):
         return f'https://www.otodom.pl/pl/wyniki/sprzedaz/mieszkanie/{woj}/{miasto}/{miasto}/{miasto}?distanceRadius=0&viewType=listing&limit=72&page={page}'
 
-    def start(self):
-        self.driver.get(self.make_url('lodzkie', 'lodz',page=self.page_now))
+    def start(self,woj,miasto):
+        self.driver.get(self.make_url(woj, miasto, page=self.page_now))
 
     def click_cookie(self):
         try:

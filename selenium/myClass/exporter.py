@@ -23,7 +23,7 @@ class Ecsv():
             writer.writeheader()
 
 
-    def save_row(self, row):
+    def save_row(self, row:dict):
         with open(self.filename, 'a', encoding='UTF8', newline='') as f:
             writer = csv.DictWriter(f, fieldnames=self.fieldnames, delimiter=';')
             writer.writerow(row)
