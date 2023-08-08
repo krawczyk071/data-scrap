@@ -22,7 +22,10 @@ import threading
 class Otodom():
     def __init__(self):
         self.options = Options()
+        # Headless
         self.options.add_argument("--headless=new")
+        # Disable Image Loading
+        self.options.add_argument('--blink-settings=imagesEnabled=false')
         # self.options.add_argument('--proxy-server=95.216.114.142:80')
         self.options.add_argument("start-maximized")
         self.options.add_experimental_option(
@@ -114,6 +117,7 @@ class Otodom():
                 self.update_last(3)
             main_page.get_html()
             main_page.parse()
+            print(page)
             self.crawl_cnt += 1
             self.reconnect()
 
@@ -203,20 +207,22 @@ class Proces():
             main_page.scroll_load()
             if page==1:
                 main_page.get_page_info()
-                self.update_last(5)
+                print(self.page_last)
+                # self.update_last(5)
             main_page.get_html()
             main_page.parse()
+            print(page)
             browser.crawl_cnt += 1
             browser.reconnect()
             if page==1:
                 browser.tearDown()
 
         # first
-        worker(1,'lodzkie','lodz')
+        worker(1,'mazowieckie','warszawa')
         # others
         if self.page_last>1:
             with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
-                executor.map(lambda x: worker(x,'lodzkie','lodz'), self.page_range)
+                executor.map(lambda x: worker(x,'mazowieckie','warszawa'), self.page_range)
 
 thread_local = threading.local()
 
@@ -226,6 +232,7 @@ if __name__ == "__main__":
     # page.run_main()
     # page.run_detail()
     proc = Proces()
+    # 170 stron 1h
     proc.runer()
 
 
