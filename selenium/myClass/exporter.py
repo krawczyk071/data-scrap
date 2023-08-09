@@ -6,17 +6,20 @@ class Ecsv():
         if mode == 'w':
             if not fieldnames:
                 raise('You need to provide fieldnames')
-            self.create(fieldnames)
+            self.create(fieldnames,filename)
         elif mode == 'r':
             if not filename:
                 raise('You need to provide filename')
             self.read(filename)
 
 
-    def create(self, fieldnames):
+    def create(self, fieldnames,filename=None):
         self.fieldnames = fieldnames
         self.timestr = time.strftime("%Y%m%d-%H%M%S")
-        self.filename = './output'+ self.timestr +'.csv'
+        if not filename:
+            self.filename = './output'+ self.timestr +'.csv'
+        else:
+            self.filename = filename
 
         with open(self.filename, 'w', encoding='UTF8', newline='') as f:
             writer = csv.DictWriter(f, fieldnames=self.fieldnames, delimiter=';')
