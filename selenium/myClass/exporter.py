@@ -35,7 +35,7 @@ class Ecsv():
 
     def save_rows(self, data):
         with open(self.filename, 'a', encoding='UTF8', newline='') as f:
-            writer = csv.writer(f, delimiter=';')
+            writer = csv.DictWriter(f, fieldnames=self.fieldnames, delimiter=';')
             writer.writerows(data)
             
     def read(self,filename):        

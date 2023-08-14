@@ -227,13 +227,14 @@ class Runner():
     def stat_otodom_one(self,ipt_path:str,start:int|None=None,end:int|None=None)->str:
         self.crawler = Static()
 
-        self.fieldnames = ['id', 'publicId', 'advertType', 'createdAt', 'modifiedAt', 'description', 'exclusiveOffer', 'externalId', 'features', 'title', 'agency', 'adCategoryname', 'adCategorytype', 'latitude', 'longitude', 'cityname', 'districtname', 'streetname', 'number', 'rent', 'costs', 'condition', 'ownership', 'ownername', 'phones', 'images', 'Area', 'Building_floors_num', 'Building_type', 'Building_material', 'Build_year', 'Construction_status', 'Extras_types', 'Floor_no', 'Heating', 'MarketType', 'OfferType', 'Price', 'ProperType', 'Rooms_num', 'Windows_type', 'Lift', 'voivodeship', 'city_or_village', 'district', 'residential','commune', 'county']
+        self.fieldnames = ['id', 'publicId', 'advertType', 'createdAt', 'modifiedAt', 'description', 'exclusiveOffer', 'externalId', 'features', 'title', 'agency', 'adCategoryname', 'adCategorytype', 'latitude', 'longitude', 'cityname', 'districtname', 'streetname', 'number', 'rent', 'costs', 'condition', 'ownership', 'ownername', 'phones', 'images', 'Area', 'Building_floors_num', 'Building_type', 'Building_material', 'Build_year', 'Construction_status', 'Extras_types', 'Floor_no', 'Heating', 'MarketType', 'OfferType', 'Price', 'ProperType', 'Rooms_num', 'Windows_type', 'Lift', 'voivodeship', 'city_or_village', 'district', 'residential','commune', 'county','Deposit', 'Equipment_types']
         self.writer = Ecsv(mode='w',fieldnames=self.fieldnames)
         # self.writer = Etxt(mode='w')
         self.err_writer = Ecsv(mode='w',fieldnames=['inactive'],filename='./output_err.csv')
         
         self.input = Ecsv(mode='r',filename=ipt_path)
-        links = [row['link'] for row in self.input.rows][start:end]
+        # links = [row['link'] for row in self.input.rows][start:end]
+        links = ['https://www.otodom.pl/pl/oferta/'+row['slug'] for row in self.input.rows][start:end]
         # timestr = time.strftime("%Y%m%d-%H%M%S")
 
         for link in tqdm(links):
@@ -296,7 +297,9 @@ if __name__ == "__main__":
     # runner.otodom_all('mazowieckie','warszawa')
     # runner.otodom_one('./input2.csv')
     # runner.stat_otodom_one(r'C:\Users\krawc\OneDrive\Documents\code\pythons\pandas-projects\otodom\out3.csv',1273+2616+1015+6080)
-    runner.stat_otodom_all('rent','lodzkie','lodz')
+    runner.stat_otodom_one(r'main_najm_wawa_fulloutput20230814-145110.csv')
+    # runner.stat_otodom_all('rent','mazowieckie','warszawa')
+
 
 # crawler
 # parser
