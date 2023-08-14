@@ -2,10 +2,12 @@ from bs4 import BeautifulSoup
 import random
 from exporter import Ecsv
 import requests, json
-
+from random import randint
+from time import sleep
 
 class Parser(BeautifulSoup):
-    pass
+    def __init__(self,html,parser="html.parser"):
+        super().__init__(html,parser)
     # soup = BeautifulSoup(self.html, "html.parser")
     # organic = soup.select_one(MainPageLocators.organic)
     # itms = organic.select(MainPageLocators.itms)
@@ -17,6 +19,7 @@ class Proxy():
     def __init__(self):
         self.current = None
         self.load_list()
+        self.warn_list = []
 
     def load_list(self):
         reader = Ecsv(mode='r',filename='./proxylist.csv')
@@ -32,11 +35,16 @@ class Proxy():
         self.current = proxy  
         return proxy
     
-    def blacklist(self,ip):
-        self.ips.remove(ip)
+    def blacklist(self,ip):        
+        if ip in self.warn_list[-2:]:
+            self.ips.remove(ip)
+            print(f'proxy {ip} removed from rotation' )
+        else:
+            self.warn_list.append(ip)
+            print(f'WARNING for {ip}')
 
 class Static():
-    def __init__(self,crawl_limit=20,use_proxy=True):
+    def __init__(self,use_proxy=True):
         self.headers= {'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3',
                         'Accept-Encoding': 'gzip',
                         'Accept-Language': 'en-US,en;q=0.9,es;q=0.8',
@@ -46,66 +54,47 @@ class Static():
         # self.params={'q': 'requests+language:python'},
 
         self.use_proxy = use_proxy
-        self.is_working = False
-        self.crawl_cnt = 0
-        self.crawl_limit = crawl_limit
-
+        self.proxy_blacklisted = []
         # PROXY
         self.proxy = Proxy()
-        # check connection
-        self.reconnect()
+        self.set_proxy()
 
-    def is_connected(self):
+    def check_proxy(self):
         res = requests.get(url='http://httpbin.org/ip',headers=self.headers,proxies=self.proxies)
         el = res.text
         try:
             res = json.loads(el)
             if ('origin' in res) & (res['origin']==self.proxy_ip.split(':')[0]):
                 print('verified origin',res['origin'])
-                self.is_working = True
+                return True
         except:
-            self.is_working = False
+            return False
 
+    def set_proxy(self):
         if self.use_proxy:
-            if not self.is_working:
-                print('Connection failed' )
-                self.proxy.blacklist(self.proxy_ip)
-                print(f'proxy {self.proxy_ip} removed from rotation' )
-                self.reconnect()
-            else:
-                print('Connection OK', self.proxy_ip)
-                self.crawl_cnt = 0
-        else:
-            if not self.is_working:
-                print('Connection failed' )                
-            else:
-                print('Connection OK - NO PROXY')
-
-    def reconnect(self):
-        if self.use_proxy:
-            if self.crawl_cnt > self.crawl_limit:
-                self.is_working = False
-
-            while (not self.is_working):
-                self.proxy_ip = self.proxy.rotate_proxy()
-                # proxy with login
-                ip,port,user,pwd = self.proxy_ip.split(':')
-                self.proxies = {'http': f'http://{user}:{pwd}@{ip}:{port}/'}
-                # verify
-                self.is_connected()
+            self.proxy_ip = self.proxy.rotate_proxy()
+            # proxy with login
+            ip,port,user,pwd = self.proxy_ip.split(':')
+            self.proxies = {'http': f'http://{user}:{pwd}@{ip}:{port}/'}
         else:
             self.proxies = None
 
-    def run(self,url):
-        self.response = requests.get(url=url,headers=self.headers,proxies=self.proxies)
-        self.response.status_code
-        
-        self.crawl_cnt += 1
-        self.reconnect()
+    def get_html(self,url,delay=True):
+        self.status_code = None
+        # random delay
+        if delay:
+            random_delay = randint(2,8)
+            sleep(random_delay)
+
+        while self.status_code!=200:
+            self.response = requests.get(url=url,headers=self.headers,proxies=self.proxies)
+            self.status_code = self.response.status_code
+            # print(self.status_code)
+            if self.status_code != 200:
+                print(f'Connection failed {self.status_code}')
+                self.proxy.blacklist(self.proxy_ip)
+            self.set_proxy()
 
         return self.response.text
 
-
-s= Static()
-print(s.run('https://www.otodom.pl/pl/wyniki/sprzedaz/mieszkanie/lodzkie/lodz/lodz/lodz?distanceRadius=0&viewType=listing&limit=72&page=3'))
 

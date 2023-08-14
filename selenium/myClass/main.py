@@ -1,15 +1,15 @@
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
-import json
+import json, time
 from tqdm import tqdm
 import pages
 import proxyjson
-from exporter import Ecsv
-from utils import Proxy
+from exporter import Ecsv,Etxt
+from utils import Proxy,Static,Parser
 import concurrent.futures
 import threading
-
+from jsonextractors import extract_oferta_from_json,extract_ads_from_json
 
 class Crawler():
     def __init__(self,headless=False,no_images=True,crawl_limit=20,use_proxy=True):
@@ -224,12 +224,79 @@ class Runner():
         with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as executor:
             executor.map(worker, links)
 
+    def stat_otodom_one(self,ipt_path:str,start:int|None=None,end:int|None=None)->str:
+        self.crawler = Static()
+
+        self.fieldnames = ['id', 'publicId', 'advertType', 'createdAt', 'modifiedAt', 'description', 'exclusiveOffer', 'externalId', 'features', 'title', 'agency', 'adCategoryname', 'adCategorytype', 'latitude', 'longitude', 'cityname', 'districtname', 'streetname', 'number', 'rent', 'costs', 'condition', 'ownership', 'ownername', 'phones', 'images', 'Area', 'Building_floors_num', 'Building_type', 'Building_material', 'Build_year', 'Construction_status', 'Extras_types', 'Floor_no', 'Heating', 'MarketType', 'OfferType', 'Price', 'ProperType', 'Rooms_num', 'Windows_type', 'Lift', 'voivodeship', 'city_or_village', 'district', 'residential','commune', 'county']
+        self.writer = Ecsv(mode='w',fieldnames=self.fieldnames)
+        # self.writer = Etxt(mode='w')
+        self.err_writer = Ecsv(mode='w',fieldnames=['inactive'],filename='./output_err.csv')
+        
+        self.input = Ecsv(mode='r',filename=ipt_path)
+        links = [row['link'] for row in self.input.rows][start:end]
+        # timestr = time.strftime("%Y%m%d-%H%M%S")
+
+        for link in tqdm(links):
+            html = self.crawler.get_html(link)
+            soup = Parser(html)
+
+            page_json=soup.select_one('#__NEXT_DATA__').text            
+            json_data=json.loads(page_json)
+            extr = extract_oferta_from_json(json_data)
+
+            if extr['is_oferta']:
+                self.writer.save_row(extr['data'])
+            else:
+                self.err_writer.save_row({'inactive':link[-7:]})
+            
+            # print(extr['info']['userSessionId'])
+            if extr['info']['isBotDetected']:
+                print('BOT detected')
+
+    def stat_otodom_all(self,type:str,woj:str,miasto:str,start:int=1,end:int|None=None)->str:
+        def make_url(woj, miasto, page=1,type='sell'):
+            if type == 'sell':
+                return f'https://www.otodom.pl/pl/wyniki/sprzedaz/mieszkanie/{woj}/{miasto}/{miasto}/{miasto}?distanceRadius=0&viewType=listing&limit=72&page={page}'
+            else:
+                return f'https://www.otodom.pl/pl/wyniki/wynajem/mieszkanie/{woj}/{miasto}/{miasto}/{miasto}?distanceRadius=0&viewType=listing&limit=72&page={page}'
+
+        self.crawler = Static()
+
+        self.fieldnames = ['id', 'title', 'slug', 'estate', 'developmentId', 'transaction', 'isPrivateOwner', 'agency', 'totalPrice', 'rentPrice', 'areaInSquareMeters', 'roomsNumber', 'peoplePerRoom', 'dateCreated', 'dateCreatedFirst', 'pushedUpAt', 'latitude', 'longitude', 'cityname', 'districtname', 'streetname', 'number', 'geo']
+        self.writer = Ecsv(mode='w',fieldnames=self.fieldnames)               
+        
+        def worker(page,woj,miasto):
+            link=make_url(woj, miasto, page,type)
+            html = self.crawler.get_html(link)
+            soup = Parser(html)
+
+            page_json=soup.select_one('#__NEXT_DATA__').text            
+            json_data=json.loads(page_json)
+            extr = extract_ads_from_json(json_data)
+            self.writer.save_rows(extr['data_list'])
+            if page == start:
+                self.pagination = extr['pagination']
+                self.page_range = range(self.pagination['page'], min(self.pagination['totalPages']+1,end+1) if end else self.pagination['totalPages']+1)
+                print(f'total pages: {self.pagination["totalPages"]}')
+                        
+            # print(extr['info']['userSessionId'])
+            if extr['info']['isBotDetected']:
+                print('BOT detected')
+        # start
+        worker(start,woj,miasto)        
+        # others
+        if len(self.page_range)>1:
+            for page in tqdm(self.page_range[1:]):
+                worker(page,woj,miasto)
+
+
 if __name__ == "__main__":
     thread_local = threading.local()
     runner = Runner()
     # runner.otodom_all('mazowieckie','warszawa')
-    runner.otodom_one('./input2.csv')
-
+    # runner.otodom_one('./input2.csv')
+    # runner.stat_otodom_one(r'C:\Users\krawc\OneDrive\Documents\code\pythons\pandas-projects\otodom\out3.csv',1273+2616+1015+6080)
+    runner.stat_otodom_all('rent','lodzkie','lodz')
 
 # crawler
 # parser
@@ -240,3 +307,4 @@ if __name__ == "__main__":
 # sqlite exporter
 
     # 170 stron 1h
+
